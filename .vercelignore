@@ -1,0 +1,5 @@
+node_modules
+zeyal-strapi/
+*.log
+.vercel
+.next 
