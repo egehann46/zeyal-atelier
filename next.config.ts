@@ -7,6 +7,18 @@ const patterns: { protocol: "http" | "https"; hostname: string; port?: string; p
     port: "1337",
     pathname: "/uploads/**",
   },
+  // Production Strapi CDN/Medya domaini
+  {
+    protocol: "https",
+    hostname: "cms.zeyalatelier.com",
+    pathname: "/uploads/**",
+  },
+  // Reverse proxy ile aynı domain altından servis edilirse
+  {
+    protocol: "https",
+    hostname: "zeyalatelier.com",
+    pathname: "/uploads/**",
+  },
 ];
 
 // Prod'da Strapi farklı bir domainde olabilir; ENV'den hostname'i ekleyelim

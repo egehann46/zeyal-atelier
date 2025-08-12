@@ -3,11 +3,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { Menu, ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 // Strapi URL
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "";
 // WhatsApp numarası (ülke koduyla, başında + olmadan). İstersen .env ile override edebilirsin
 const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "905079656645";
 
@@ -157,6 +157,10 @@ export default function Home() {
   const [videoSources, setVideoSources] = useState<string[]>([]);
   const [videoIndex, setVideoIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  // Swipe refs (mobil)
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const touchDidSwipeRef = useRef(false);
   // index değişince videoyu yükle/oynat (416 gibi istek hatalarında yeniden denemeye yardımcı olur)
   useEffect(() => {
     const el = videoRef.current;
@@ -279,6 +283,41 @@ export default function Home() {
   const handleNextVideo = () => {
     setVideoIndex((i) => (videoSources.length ? (i + 1) % videoSources.length : i));
   };
+  const handlePrevVideo = () => {
+    setVideoIndex((i) => (videoSources.length ? (i - 1 + videoSources.length) % videoSources.length : i));
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartXRef.current = t.clientX;
+    touchStartYRef.current = t.clientY;
+    touchDidSwipeRef.current = false;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchDidSwipeRef.current) return;
+    const startX = touchStartXRef.current;
+    const startY = touchStartYRef.current;
+    if (startX == null || startY == null) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    const threshold = 40; // piksel
+    if (absDx > absDy && absDx > threshold) {
+      touchDidSwipeRef.current = true;
+      if (dx < 0) {
+        handleNextVideo(); // sola kaydır → sonraki
+      } else {
+        handlePrevVideo(); // sağa kaydır → önceki
+      }
+    }
+  };
+  const onTouchEnd = () => {
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+    touchDidSwipeRef.current = false;
+  };
 
   const filtered = selectedCategory ? products.filter(u => u.kategori === selectedCategory) : products;
 
@@ -287,7 +326,14 @@ export default function Home() {
       <Header onKategoriSec={handleKategoriSec} onTumUrunler={handleTumUrunler} kategoriler={categories} />
 
       {/* Hero */}
-      <section id="hero" className="relative min-h-screen flex items-center justify-center" style={{ paddingTop: "5rem" }}>
+      <section
+        id="hero"
+        className="relative min-h-screen flex items-center justify-center"
+        style={{ paddingTop: "5rem" }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover z-0"
@@ -299,6 +345,15 @@ export default function Home() {
           onError={handleNextVideo}
           preload="auto"
         />
+        {/* Mobil ok göstergesi (sağda) */}
+        <button
+          type="button"
+          onClick={handleNextVideo}
+          aria-label="Sonraki videoya geç"
+          className="md:hidden absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 text-white active:bg-black/40"
+        >
+          <ChevronRight size={22} />
+        </button>
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
           {videoSources.map((_, idx) => (
             <button
