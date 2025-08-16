@@ -11,8 +11,15 @@ function currencyTRY(n: unknown): string | null {
   return num.toLocaleString("tr-TR", { style: "currency", currency: "TRY" });
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const { data } = await supabaseAdmin.from("products").select("name, description, price, image_url, image_urls").eq("id", params.id).single();
+export async function generateMetadata(props: any): Promise<Metadata> {
+  const params = props?.params?.then ? await props.params : props?.params;
+  const id: string | undefined = params?.id;
+  if (!id) return { title: "Ürün | Zeyal Atelier" };
+  const { data } = await supabaseAdmin
+    .from("products")
+    .select("name, description, price, image_url, image_urls")
+    .eq("id", id)
+    .single();
   const title = data?.name ? `${data.name} | Zeyal Atelier` : "Ürün | Zeyal Atelier";
   const description = data?.description || "Kintsugi, dokulu tablo ve mum yapım malzemeleri.";
   const img = (Array.isArray((data as any)?.image_urls) && (data as any).image_urls[0]) || data?.image_url || "/favicon-512x512.png";
@@ -25,15 +32,17 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       images: [{ url: img }],
       type: "website",
     },
-    alternates: { canonical: `/product/${params.id}` },
+    alternates: { canonical: `/product/${id}` },
   };
 }
 
-export default async function ProductDetail({ params }: { params: { id: string } }) {
+export default async function ProductDetail(props: any) {
+  const params = props?.params?.then ? await props.params : props?.params;
+  const id: string = params?.id;
   const { data, error } = await supabaseAdmin
     .from("products")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
   if (error) return <div className="max-w-5xl mx-auto p-6">Hata: {error.message}</div>;
   if (!data) return <div className="max-w-5xl mx-auto p-6">Ürün bulunamadı</div>;
