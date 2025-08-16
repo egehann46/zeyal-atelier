@@ -70,8 +70,8 @@ export default async function ProductDetail(props: any) {
   };
 
   return (
-    <div className="min-h-screen bg-white pt-16 md:pt-20">
-      <div className="max-w-5xl mx-auto p-6 mt-2 md:mt-3">
+    <div className="min-h-screen bg-white pt-12 md:pt-20">
+      <div className="max-w-5xl mx-auto p-6 mt-0 md:mt-2">
         <Link href="/#tum-urunler" className="text-logo hover:underline">← Geri Dön</Link>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
           <div>

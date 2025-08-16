@@ -160,7 +160,7 @@ export default function EditProduct() {
 			<div>
 				<label className="block text-sm mb-1">Görseller</label>
 				<div className="flex items-center gap-3">
-					<input ref={fileRef} type="file" accept="image/*" multiple capture="environment" onChange={handleFileChange} className="hidden" />
+					<input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
 					<button type="button" onClick={() => fileRef.current?.click()} className="px-3 py-2 rounded-md bg-[#111827] text-white hover:bg-[#1f2937] transition text-sm">
 						Görsel(ler)i Seç
 					</button>

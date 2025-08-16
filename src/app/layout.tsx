@@ -17,7 +17,7 @@ const SITE_NAME = "Zeyal Atelier";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} | El Yapımı Workshoplar & Malzemeler`,
+    default: "Sanatı Eve Taşıyan Özgür Malzemeler Ve Sanat Kitleri",
     template: `%s | ${SITE_NAME}`,
   },
   description: "Bursa Nilüfer'de atölyesi bulunan Zeyal Atelier'de kintsugi, dokulu tablo ve mum yapım malzemeleri. Türkiye'nin her yerine hızlı gönderim.",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} | El Yapımı Workshoplar & Malzemeler`,
+    title: "Sanatı Eve Taşıyan Özgür Malzemeler Ve Sanat Kitleri",
     description: "Kintsugi, dokulu tablo ve mum yapım malzemeleri. Türkiye geneli kargo.",
     images: [
       { url: "/favicon-512x512.png", width: 512, height: 512, alt: SITE_NAME },
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} | El Yapımı Workshoplar & Malzemeler`,
+    title: "Sanatı Eve Taşıyan Özgür Malzemeler Ve Sanat Kitleri",
     description: "Kintsugi, dokulu tablo ve mum yapım malzemeleri. Türkiye geneli kargo.",
     images: ["/favicon-512x512.png"],
   },
