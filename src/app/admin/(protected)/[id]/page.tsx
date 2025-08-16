@@ -10,7 +10,9 @@ export default function EditProduct() {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [price, setPrice] = useState<string>("");
-	const [images, setImages] = useState<string[]>([]);
+	const [images, setImages] = useState<string[]>([]); // existing URLs
+	const [localFiles, setLocalFiles] = useState<File[]>([]); // pending files
+	const [localPreviews, setLocalPreviews] = useState<string[]>([]);
 	const [categories, setCategories] = useState<string>("");
 	const [dimensions, setDimensions] = useState<string>("");
 	const [color, setColor] = useState<string>("");
@@ -22,7 +24,10 @@ export default function EditProduct() {
 	const [uploading, setUploading] = useState(false);
 	const fileRef = useRef<HTMLInputElement | null>(null);
 
-	const removeImageUrl = (url: string) => setImages((arr) => arr.filter((x) => x !== url));
+	const removePreview = (idx: number) => {
+		setLocalFiles((arr) => arr.filter((_, i) => i !== idx));
+		setLocalPreviews((arr) => arr.filter((_, i) => i !== idx));
+	};
 
 	useEffect(() => {
 		async function load() {
@@ -56,11 +61,20 @@ export default function EditProduct() {
 	async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const files = e.target.files ? Array.from(e.target.files) : [];
 		if (!files.length) return;
-		setUploading(true);
 		setError(null);
+		const previews: string[] = [];
+		for (const f of files) previews.push(await fileToDataUrl(f));
+		setLocalFiles((arr) => [...arr, ...files]);
+		setLocalPreviews((arr) => [...arr, ...previews]);
+		if (fileRef.current) fileRef.current.value = "";
+	}
+
+	async function uploadPending(): Promise<string[]> {
+		if (!localFiles.length) return [];
+		setUploading(true);
 		try {
 			const urls: string[] = [];
-			for (const file of files) {
+			for (const file of localFiles) {
 				const fd = new FormData();
 				fd.append("file", file);
 				const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -68,12 +82,9 @@ export default function EditProduct() {
 				if (!res.ok) throw new Error(json?.error || "Yükleme hatası");
 				urls.push(json.url);
 			}
-			setImages((arr) => Array.from(new Set([...arr, ...urls])));
-		} catch (e: any) {
-			setError(e?.message || "Dosya yükleme hatası");
+			return urls;
 		} finally {
 			setUploading(false);
-			if (fileRef.current) fileRef.current.value = "";
 		}
 	}
 
@@ -82,6 +93,8 @@ export default function EditProduct() {
 		setSaving(true);
 		setError(null);
 		try {
+			const uploaded = await uploadPending();
+			const allUrls = Array.from(new Set([...(images || []), ...uploaded]));
 			const res = await fetch(`/api/products/${id}`, {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
@@ -89,8 +102,8 @@ export default function EditProduct() {
 					name,
 					description,
 					price: price ? Number(price) : null,
-					image_url: images[0] || null,
-					image_urls: images,
+					image_url: allUrls[0] || null,
+					image_urls: allUrls,
 					categories: categories ? categories.split(",").map((s) => s.trim()).filter(Boolean) : [],
 					dimensions: dimensions || null,
 					color: color || null,
@@ -170,7 +183,12 @@ export default function EditProduct() {
 					{images.map((u) => (
 						<div key={u} className="relative">
 							<img src={u} alt="img" className="w-24 h-24 object-cover rounded" />
-							<button type="button" className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6" onClick={() => removeImageUrl(u)}>×</button>
+						</div>
+					))}
+					{localPreviews.map((u, idx) => (
+						<div key={`${u}-${idx}`} className="relative">
+							<img src={u} alt="preview" className="w-24 h-24 object-cover rounded" />
+							<button type="button" className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6" onClick={() => removePreview(idx)}>×</button>
 						</div>
 					))}
 				</div>
@@ -186,4 +204,13 @@ export default function EditProduct() {
 			</div>
 		</form>
 	);
+}
+
+async function fileToDataUrl(file: File): Promise<string> {
+	return await new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(String(reader.result || ""));
+		reader.onerror = reject;
+		reader.readAsDataURL(file);
+	});
 } 

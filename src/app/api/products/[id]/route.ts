@@ -10,6 +10,35 @@ function isUndefinedColumnError(err: any): boolean {
   );
 }
 
+function extractStoragePath(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const p = u.pathname;
+    const markers = [
+      "/storage/v1/object/sign/products/",
+      "/storage/v1/object/public/products/",
+      "/object/sign/products/",
+      "/object/public/products/",
+    ];
+    for (const m of markers) {
+      const idx = p.indexOf(m);
+      if (idx >= 0) {
+        const rest = p.slice(idx + m.length);
+        return rest.split("?")[0];
+      }
+    }
+    // Bazı URL'ler doğrudan /products/ ile başlayabilir
+    const idx2 = p.indexOf("/products/");
+    if (idx2 >= 0) {
+      const rest = p.slice(idx2 + "/products/".length);
+      return rest.split("?")[0];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function PUT(request: Request, { params }: any) {
   const { id } = params;
   const body = await request.json().catch(() => ({}));
@@ -44,7 +73,27 @@ export async function PUT(request: Request, { params }: any) {
 
 export async function DELETE(_request: Request, { params }: any) {
   const { id } = params;
+  // Önce görsel URL'lerini al
+  const { data: product } = await supabaseAdmin.from("products").select("image_url, image_urls").eq("id", id).single();
+
+  // Sonra ürünü sil
   const { error } = await supabaseAdmin.from("products").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Storage temizliği (best-effort)
+  try {
+    const urls: string[] = [];
+    if (product?.image_url) urls.push(product.image_url as any);
+    if (Array.isArray(product?.image_urls)) urls.push(...(product!.image_urls as any[]));
+    const paths = urls
+      .map((u) => (typeof u === "string" ? extractStoragePath(u) : null))
+      .filter((x): x is string => Boolean(x));
+    if (paths.length) {
+      await supabaseAdmin.storage.from("products").remove(paths);
+    }
+  } catch {
+    // yut
+  }
+
   return NextResponse.json({ ok: true });
 } 

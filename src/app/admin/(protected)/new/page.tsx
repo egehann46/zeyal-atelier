@@ -7,7 +7,9 @@ export default function NewProduct() {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [price, setPrice] = useState<string>("");
-	const [images, setImages] = useState<string[]>([]);
+	const [images, setImages] = useState<string[]>([]); // finalized URLs (after upload)
+	const [localFiles, setLocalFiles] = useState<File[]>([]); // not uploaded yet
+	const [localPreviews, setLocalPreviews] = useState<string[]>([]);
 	const [categories, setCategories] = useState<string>("");
 	const [dimensions, setDimensions] = useState<string>("");
 	const [color, setColor] = useState<string>("");
@@ -18,16 +20,31 @@ export default function NewProduct() {
 	const [uploading, setUploading] = useState(false);
 	const fileRef = useRef<HTMLInputElement | null>(null);
 
-	const removeImageUrl = (url: string) => setImages((arr) => arr.filter((x) => x !== url));
+	const removeLocal = (idx: number) => {
+		setLocalFiles((arr) => arr.filter((_, i) => i !== idx));
+		setLocalPreviews((arr) => arr.filter((_, i) => i !== idx));
+	};
 
 	async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const files = e.target.files ? Array.from(e.target.files) : [];
 		if (!files.length) return;
-		setUploading(true);
 		setError(null);
+		// just prepare previews; do not upload now
+		const previews: string[] = [];
+		for (const f of files) {
+			previews.push(await fileToDataUrl(f));
+		}
+		setLocalFiles((arr) => [...arr, ...files]);
+		setLocalPreviews((arr) => [...arr, ...previews]);
+		if (fileRef.current) fileRef.current.value = "";
+	}
+
+	async function uploadAllSelectedFiles(): Promise<string[]> {
+		if (!localFiles.length) return [];
+		setUploading(true);
 		try {
 			const urls: string[] = [];
-			for (const file of files) {
+			for (const file of localFiles) {
 				const fd = new FormData();
 				fd.append("file", file);
 				const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -35,12 +52,9 @@ export default function NewProduct() {
 				if (!res.ok) throw new Error(json?.error || "Yükleme hatası");
 				urls.push(json.url);
 			}
-			setImages((arr) => Array.from(new Set([...arr, ...urls])));
-		} catch (e: any) {
-			setError(e?.message || "Dosya yükleme hatası");
+			return urls;
 		} finally {
 			setUploading(false);
-			if (fileRef.current) fileRef.current.value = "";
 		}
 	}
 
@@ -49,6 +63,9 @@ export default function NewProduct() {
 		setSaving(true);
 		setError(null);
 		try {
+			// upload on save
+			const uploadedUrls = await uploadAllSelectedFiles();
+			const allUrls = Array.from(new Set([...(images || []), ...uploadedUrls]));
 			const res = await fetch("/api/products", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -56,8 +73,8 @@ export default function NewProduct() {
 					name,
 					description,
 					price: price ? Number(price) : null,
-					image_url: images[0] || null,
-					image_urls: images,
+					image_url: allUrls[0] || null,
+					image_urls: allUrls,
 					categories: categories ? categories.split(",").map((s) => s.trim()).filter(Boolean) : [],
 					dimensions: dimensions || null,
 					color: color || null,
@@ -117,10 +134,10 @@ export default function NewProduct() {
 					{uploading && <div className="text-sm text-gray-500">Yükleniyor...</div>}
 				</div>
 				<div className="mt-3 flex flex-wrap gap-2">
-					{images.map((u) => (
-						<div key={u} className="relative">
-							<img src={u} alt="img" className="w-24 h-24 object-cover rounded" />
-							<button type="button" className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6" onClick={() => removeImageUrl(u)}>×</button>
+					{localPreviews.map((u, idx) => (
+						<div key={`${u}-${idx}`} className="relative">
+							<img src={u} alt="preview" className="w-24 h-24 object-cover rounded" />
+							<button type="button" className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6" onClick={() => removeLocal(idx)}>×</button>
 						</div>
 					))}
 				</div>
@@ -135,4 +152,13 @@ export default function NewProduct() {
 			</div>
 		</form>
 	);
+}
+
+async function fileToDataUrl(file: File): Promise<string> {
+	return await new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(String(reader.result || ""));
+		reader.onerror = reject;
+		reader.readAsDataURL(file);
+	});
 } 
