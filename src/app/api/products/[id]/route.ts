@@ -13,25 +13,21 @@ function isUndefinedColumnError(err: any): boolean {
 function extractStoragePath(url: string): string | null {
   try {
     const u = new URL(url);
-    const p = u.pathname;
+    const p = decodeURIComponent(u.pathname);
     const markers = [
       "/storage/v1/object/sign/products/",
       "/storage/v1/object/public/products/",
       "/object/sign/products/",
       "/object/public/products/",
+      "/products/",
     ];
     for (const m of markers) {
       const idx = p.indexOf(m);
       if (idx >= 0) {
         const rest = p.slice(idx + m.length);
+        // Bazı imzalı URL'lerde ilk parça 'uploads' olabilir; tamamını döndür
         return rest.split("?")[0];
       }
-    }
-    // Bazı URL'ler doğrudan /products/ ile başlayabilir
-    const idx2 = p.indexOf("/products/");
-    if (idx2 >= 0) {
-      const rest = p.slice(idx2 + "/products/".length);
-      return rest.split("?")[0];
     }
     return null;
   } catch {
@@ -81,6 +77,8 @@ export async function DELETE(_request: Request, { params }: any) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Storage temizliği (best-effort)
+  let removed: string[] = [];
+  let failed: string[] = [];
   try {
     const urls: string[] = [];
     if (product?.image_url) urls.push(product.image_url as any);
@@ -89,11 +87,13 @@ export async function DELETE(_request: Request, { params }: any) {
       .map((u) => (typeof u === "string" ? extractStoragePath(u) : null))
       .filter((x): x is string => Boolean(x));
     if (paths.length) {
-      await supabaseAdmin.storage.from("products").remove(paths);
+      const { data: delRes, error: delErr } = await supabaseAdmin.storage.from("products").remove(paths);
+      if (delErr) failed = paths;
+      else if (Array.isArray(delRes)) removed = delRes.map((d: any) => d?.name || "");
     }
   } catch {
     // yut
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, removed, failed });
 } 
