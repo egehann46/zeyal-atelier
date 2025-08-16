@@ -138,6 +138,7 @@ export default function Home() {
   const [categories, setCategories] = useState<string[]>([]);
   const [products, setProducts] = useState<Array<{ id?: string; ad: string; kategori: string; imgs: string[]; fiyat?: string; desc?: string; stock?: string | null }>>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [productsLoading, setProductsLoading] = useState(true);
   const tumUrunlerRef = useRef<HTMLDivElement | null>(null);
   const [videoSources, setVideoSources] = useState<string[]>([]);
   const [videoIndex, setVideoIndex] = useState(0);
@@ -162,6 +163,7 @@ export default function Home() {
     async function load() {
       try {
         setLoadError(null);
+        setProductsLoading(true);
         const res = await fetch("/api/products", { cache: "no-store" });
         const json = await res.json();
         if (!res.ok) throw new Error(json?.error || `Yükleme hatası (${res.status})`);
@@ -184,8 +186,10 @@ export default function Home() {
           };
         });
         if (!cancelled) setProducts(mapped);
+        if (!cancelled) setProductsLoading(false);
       } catch (e: any) {
         if (!cancelled) setLoadError(e?.message || "Veri yüklenemedi");
+        if (!cancelled) setProductsLoading(false);
       }
     }
     load();
@@ -358,11 +362,23 @@ export default function Home() {
           ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {filtered.map((u, i) => (
+          {productsLoading && (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="animate-pulse bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div className="w-full h-80 md:h-72 bg-gray-200" />
+                <div className="p-5 space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  <div className="h-4 bg-gray-200 rounded w-5/6" />
+                  <div className="h-8 bg-gray-300 rounded w-1/3 ml-auto" />
+                </div>
+              </div>
+            ))
+          )}
+          {!productsLoading && filtered.map((u, i) => (
             <ProductCard key={i} u={u as any} priority={i === 0} />
           ))}
         </div>
-        {filtered.length === 0 && <div className="text-center text-gray-500 mt-10">Bu kategoride ürün bulunamadı.</div>}
+        {!productsLoading && filtered.length === 0 && <div className="text-center text-gray-500 mt-10">Bu kategoride ürün bulunamadı.</div>}
       </section>
 
       {/* Footer */}
