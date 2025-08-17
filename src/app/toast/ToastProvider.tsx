@@ -29,7 +29,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     // otomatik kaldır
     window.setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 2500);
+    }, 1500);
   }, []);
 
   const api = useMemo<ToastApi>(() => ({
@@ -41,21 +41,24 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2">
-        {toasts.map(t => (
-          <div key={t.id}
-               className={`pointer-events-auto flex items-center gap-2 rounded-md px-3 py-2 shadow-lg border text-sm
-                ${t.kind === "success" ? "bg-green-50 border-green-200 text-green-800" : ""}
-                ${t.kind === "error" ? "bg-red-50 border-red-200 text-red-800" : ""}
-                ${t.kind === "info" ? "bg-blue-50 border-blue-200 text-blue-800" : ""}
-               `}
-               aria-live="polite"
-               role="status"
-          >
-            {t.kind === "success" && <CheckCircle2 className="text-green-600" size={18} />}
-            <span>{t.message}</span>
-          </div>
-        ))}
+      <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
+        {toasts.length > 0 && <div className="absolute inset-0 bg-black/20" />}
+        <div className="flex flex-col items-center gap-3">
+          {toasts.map(t => (
+            <div key={t.id}
+                 className={`pointer-events-auto relative flex items-center gap-2 rounded-lg px-4 py-3 shadow-2xl border text-base bg-white transition-all duration-150
+                  ${t.kind === "success" ? "border-green-300 text-green-800" : ""}
+                  ${t.kind === "error" ? "border-red-300 text-red-800" : ""}
+                  ${t.kind === "info" ? "border-blue-300 text-blue-800" : ""}
+                 `}
+                 aria-live="polite"
+                 role="status"
+            >
+              {t.kind === "success" && <CheckCircle2 className="text-green-600" size={20} />}
+              <span className="font-medium">{t.message}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </ToastContext.Provider>
   );
