@@ -30,7 +30,7 @@ export async function generateMetadata(props: any): Promise<Metadata> {
       title,
       description,
       images: [{ url: img }],
-      type: "product",
+      type: "website",
     },
     alternates: { canonical: `/product/${id}` },
   };
