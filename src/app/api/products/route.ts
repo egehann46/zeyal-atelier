@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+// Bu route'u 5 dakika boyunca önbelleğe al (ISR)
+export const revalidate = 300;
 
 function isUndefinedColumnError(err: any): boolean {
   const msg = (err && (err.message || err.error || ""))?.toString().toLowerCase();
@@ -13,10 +17,15 @@ function isUndefinedColumnError(err: any): boolean {
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("products")
-    .select("*")
+    .select("id,name,description,price,image_url,image_urls,categories,stock,created_at")
     .order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
+  const res = NextResponse.json({ data });
+  // CDN (s-maxage) ve tarayıcı (max-age=0) önbellek politikası:
+  // - Browser her istekte sunucuyu yoklar (must-revalidate), böylece admin ekledikten sonra hemen görür
+  // - CDN 5 dk cacheler; on-demand revalidate ile anında geçersiz kılabiliyoruz
+  res.headers.set("Cache-Control", "public, max-age=0, must-revalidate, s-maxage=300, stale-while-revalidate=86400");
+  return res;
 }
 
 export async function POST(request: Request) {
@@ -43,5 +52,9 @@ export async function POST(request: Request) {
     insert = await supabaseAdmin.from("products").insert(noExtra).select().single();
   }
   if (insert.error) return NextResponse.json({ error: insert.error.message }, { status: 500 });
+  try {
+    // Ürün listesi endpoint'ini anında geçersiz kıl → yeni ürün herkese hemen görünür
+    revalidatePath("/api/products");
+  } catch {}
   return NextResponse.json({ data: insert.data }, { status: 201 });
 } 

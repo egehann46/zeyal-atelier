@@ -1,8 +1,10 @@
 "use client";
 import { useCart } from "./CartContext";
+import { useRouter } from "next/navigation";
 
 export default function CartSheet() {
   const { items, totalPrice, isOpen, close, updateQuantity, removeItem, clear } = useCart();
+  const router = useRouter();
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50">
@@ -15,19 +17,26 @@ export default function CartSheet() {
         <div className="flex-1 overflow-auto space-y-3">
           {items.length === 0 && <div className="text-gray-500">Sepetiniz boş</div>}
           {items.map(i => (
-            <div key={i.id} className="flex gap-3 border rounded p-2">
+            <div
+              key={i.id}
+              className="flex gap-3 border rounded p-2 cursor-pointer hover:bg-gray-50"
+              onClick={() => { close(); router.push(`/product/${i.id}`); }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); close(); router.push(`/product/${i.id}`); } }}
+            >
               <img src={i.image || "/placeholder.png"} alt={i.name} className="w-16 h-16 object-cover rounded" />
               <div className="flex-1">
                 <div className="font-medium">{i.name}</div>
                 <div className="text-sm text-gray-500">{(Number(i.price) || 0).toLocaleString("tr-TR", { style: "currency", currency: "TRY" })}</div>
                 <div className="flex items-center gap-2 mt-1">
-                  <button onClick={() => updateQuantity(i.id, Math.max(1, i.quantity - 1))} className="px-2 py-1 rounded bg-gray-200">-</button>
-                  <input value={i.quantity} onChange={(e) => updateQuantity(i.id, Math.max(1, Number(e.target.value) || 1))} className="w-14 border rounded px-2 py-1 text-center" />
-                  <button onClick={() => updateQuantity(i.id, i.quantity + 1)} className="px-2 py-1 rounded bg-gray-200">+</button>
+                  <button onClick={(e) => { e.stopPropagation(); updateQuantity(i.id, Math.max(1, i.quantity - 1)); }} className="px-2 py-1 rounded bg-gray-200">-</button>
+                  <input value={i.quantity} onClick={(e) => e.stopPropagation()} onChange={(e) => updateQuantity(i.id, Math.max(1, Number(e.target.value) || 1))} className="w-14 border rounded px-2 py-1 text-center" />
+                  <button onClick={(e) => { e.stopPropagation(); updateQuantity(i.id, i.quantity + 1); }} className="px-2 py-1 rounded bg-gray-200">+</button>
                 </div>
               </div>
               <div className="flex flex-col items-end justify-between">
-                <button onClick={() => removeItem(i.id)} className="text-red-600 text-sm">Kaldır</button>
+                <button onClick={(e) => { e.stopPropagation(); removeItem(i.id); }} className="text-red-600 text-sm">Kaldır</button>
                 <div className="text-sm font-semibold">{(((Number(i.price) || 0) * i.quantity)).toLocaleString("tr-TR", { style: "currency", currency: "TRY" })}</div>
               </div>
             </div>

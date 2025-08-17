@@ -167,7 +167,7 @@ function HomeInner() {
       try {
         setLoadError(null);
         setProductsLoading(true);
-        const res = await fetch("/api/products", { cache: "no-store" });
+        const res = await fetch("/api/products", { next: { revalidate: 300 } });
         const json = await res.json();
         if (!res.ok) throw new Error(json?.error || `Yükleme hatası (${res.status})`);
         const list: Product[] = Array.isArray(json?.data) ? json.data : [];
