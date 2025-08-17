@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // WhatsApp numarası (ülke koduyla, başında + olmadan). İstersen .env ile override edebilirsin
 const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "905079656645";
@@ -143,6 +144,8 @@ export default function Home() {
   const [videoSources, setVideoSources] = useState<string[]>([]);
   const [videoIndex, setVideoIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   // Swipe refs (mobil)
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
@@ -196,6 +199,19 @@ export default function Home() {
     return () => { cancelled = true; };
   }, []);
 
+  // URL'den kategori (cat) parametresini takip et
+  useEffect(() => {
+    const cat = searchParams?.get("cat");
+    if (cat && cat !== selectedCategory) {
+      setSelectedCategory(cat);
+    }
+    if (!cat && selectedCategory !== null) {
+      // URL'de cat yoksa tüm ürünler seçili olsun
+      setSelectedCategory(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // Public klasöründen video dosyalarını (video.mp4, video1.mp4, video2.mp4) tespit et
   useEffect(() => {
     let cancelled = false;
@@ -230,10 +246,17 @@ export default function Home() {
 
   const handleKategoriSec = (kategori: string) => {
     setSelectedCategory(kategori);
+    const params = new URLSearchParams(window.location.search);
+    params.set("cat", kategori);
+    router.push(`/?${params.toString()}#tum-urunler`);
     scrollToTumUrunler();
   };
   const handleTumUrunler = () => {
     setSelectedCategory(null);
+    const params = new URLSearchParams(window.location.search);
+    params.delete("cat");
+    const qs = params.toString();
+    router.push(`/${qs ? `?${qs}` : ""}#tum-urunler`);
     scrollToTumUrunler();
   };
 

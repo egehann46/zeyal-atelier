@@ -11,6 +11,25 @@ export default function Header() {
 	const menuRef = useRef<HTMLDivElement>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const { totalQuantity, open: openCart, totalPrice } = useCart();
+	const [categories, setCategories] = useState<string[]>([]);
+
+	useEffect(() => {
+		let cancelled = false;
+		async function loadCats() {
+			try {
+				const res = await fetch("/api/products", { cache: "no-store" });
+				const json = await res.json().catch(() => ({}));
+				if (!res.ok) return;
+				const list: Array<{ categories?: string[] | null }> = Array.isArray(json?.data) ? json.data : [];
+				const cats = Array.from(new Set(list.flatMap(p => Array.isArray(p.categories) ? p.categories : []).filter(Boolean))).sort();
+				if (!cancelled) setCategories(cats as string[]);
+			} catch {
+				// sessizce geç
+			}
+		}
+		loadCats();
+		return () => { cancelled = true; };
+	}, []);
 
 	useEffect(() => {
 		function handleClick(e: MouseEvent) {
@@ -110,6 +129,20 @@ export default function Header() {
 							Tüm Ürünler
 						</Link>
 					</li>
+					{categories.length > 0 && (
+						<li className="px-6 py-2 text-xs uppercase tracking-wide text-gray-400">Kategoriler</li>
+					)}
+					{categories.map(cat => (
+						<li key={cat}>
+							<Link
+								href={`/?cat=${encodeURIComponent(cat)}#tum-urunler`}
+								className="block px-6 py-2 hover:bg-[#F5F5DC] hover:text-logo transition text-[#363636]"
+								onClick={() => setOpen(false)}
+							>
+								{cat}
+							</Link>
+						</li>
+					))}
 				</ul>
 			</div>
 		</header>
