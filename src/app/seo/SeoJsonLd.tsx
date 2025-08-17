@@ -5,7 +5,7 @@ export default function SeoJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Zeyal Atelier",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://zeyalatelier.com",
     logo: "/favicon-512x512.png",
     address: {
       "@type": "PostalAddress",
