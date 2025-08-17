@@ -134,7 +134,7 @@ function ProductCard({ u, priority }: { u: { id?: string; ad: string; kategori: 
   );
 }
 
-export default function Home() {
+function HomeInner() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [products, setProducts] = useState<Array<{ id?: string; ad: string; kategori: string; imgs: string[]; fiyat?: string; desc?: string; stock?: string | null }>>([]);
@@ -302,7 +302,6 @@ export default function Home() {
   const filtered = selectedCategory ? products.filter(u => u.kategori === selectedCategory) : products;
 
   return (
-    <Suspense fallback={null}>
     <div className="bg-[#ffffff]">
 
       {/* Hero */}
@@ -454,6 +453,13 @@ export default function Home() {
         <div className="border-t border-gray-700 mt-10 pt-4 text-center text-gray-400 text-xs">&copy; 2025 Zeyal Atelier. Tüm hakları saklıdır.</div>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeInner />
     </Suspense>
   );
 }
