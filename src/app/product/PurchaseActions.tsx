@@ -2,9 +2,11 @@
 import { useState } from "react";
 import { useCart } from "@/app/cart/CartContext";
 import { ShoppingCart, Zap } from "lucide-react";
+import { useToast } from "@/app/toast/ToastProvider";
 
 export default function PurchaseActions({ id, name, price, image, disabled }: { id: string; name: string; price: number | null; image?: string | null; disabled?: boolean }) {
-  const { addItem, open } = useCart();
+  const { addItem } = useCart();
+  const { success } = useToast();
   const [qty, setQty] = useState(1);
   const canAct = !disabled;
   const unitPrice = Number(price) || 0;
@@ -13,7 +15,7 @@ export default function PurchaseActions({ id, name, price, image, disabled }: { 
   function onAddToCart() {
     if (!canAct) return;
     addItem({ id, name, price: unitPrice, image: image ?? undefined }, qty);
-    open();
+    success("Ürün başarıyla sepete eklendi");
   }
 
   function buildWhatsAppUrl() {

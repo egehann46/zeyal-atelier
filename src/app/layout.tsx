@@ -7,15 +7,29 @@ import { CartProvider } from "./cart/CartContext";
 import CartSheet from "./cart/CartSheet";
 import HeaderGate from "./HeaderGate";
 import SeoJsonLd from "./seo/SeoJsonLd";
+import { ToastProvider } from "./toast/ToastProvider";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-poppins" });
 const dancing = Dancing_Script({ subsets: ["latin"], weight: "400", variable: "--font-dancing" });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const RAW_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL;
+const FALLBACK_URL = "http://localhost:3000";
+const SITE_URL = (RAW_SITE_URL && RAW_SITE_URL.trim()) ? RAW_SITE_URL.trim() : FALLBACK_URL;
+let METADATA_BASE: URL | undefined;
+try {
+  METADATA_BASE = new URL(SITE_URL);
+} catch {
+  try {
+    METADATA_BASE = new URL(`https://${SITE_URL.replace(/^https?:\/\//, "")}`);
+  } catch {
+    METADATA_BASE = undefined;
+  }
+}
+
 const SITE_NAME = "Zeyal Atelier";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  ...(METADATA_BASE ? { metadataBase: METADATA_BASE } : {}),
   title: {
     default: "Sanatı Eve Taşıyan Özgür Malzemeler Ve Sanat Kitleri",
     template: `%s | ${SITE_NAME}`,
@@ -83,10 +97,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="tr" className={`${poppins.variable} ${dancing.variable}`}>
       <body className="bg-[#FAF6F1]">
         <CartProvider>
-          <HeaderGate />
-          <SeoJsonLd />
-          {children}
-          <CartSheet />
+          <ToastProvider>
+            <HeaderGate />
+            <SeoJsonLd />
+            {children}
+            <CartSheet />
+          </ToastProvider>
         </CartProvider>
       </body>
     </html>

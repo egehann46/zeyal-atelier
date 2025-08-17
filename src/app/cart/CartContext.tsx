@@ -59,7 +59,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { ...item, quantity: Math.max(1, quantity) }];
     });
-    setOpen(true);
+    // Otomatik sepet açmayı kaldırdık
+    // setOpen(true);
   }, []);
 
   const updateQuantity = useCallback((id: string, quantity: number) => {

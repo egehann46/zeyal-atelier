@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useCart } from "@/app/cart/CartContext";
+import { useToast } from "@/app/toast/ToastProvider";
 
 export default function AddToCart({ id, name, price, image, disabled }: { id: string; name: string; price: number | null; image?: string | null; disabled?: boolean }) {
-  const { addItem, open } = useCart();
+  const { addItem } = useCart();
+  const { success } = useToast();
   const [qty, setQty] = useState(1);
   const canAdd = !disabled;
   const formatted = (Number(price) || 0) * qty;
@@ -11,7 +13,7 @@ export default function AddToCart({ id, name, price, image, disabled }: { id: st
   function add() {
     if (!canAdd) return;
     addItem({ id, name, price: price ?? 0, image: image ?? undefined }, qty);
-    open();
+    success("Ürün başarıyla sepete eklendi");
   }
 
   return (
