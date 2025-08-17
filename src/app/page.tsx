@@ -4,7 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // WhatsApp numarası (ülke koduyla, başında + olmadan). İstersen .env ile override edebilirsin
@@ -302,6 +302,7 @@ export default function Home() {
   const filtered = selectedCategory ? products.filter(u => u.kategori === selectedCategory) : products;
 
   return (
+    <Suspense fallback={null}>
     <div className="bg-[#ffffff]">
 
       {/* Hero */}
@@ -453,5 +454,6 @@ export default function Home() {
         <div className="border-t border-gray-700 mt-10 pt-4 text-center text-gray-400 text-xs">&copy; 2025 Zeyal Atelier. Tüm hakları saklıdır.</div>
       </footer>
     </div>
+    </Suspense>
   );
 }
