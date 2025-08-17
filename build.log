@@ -1,0 +1,9 @@
+
+> workshop-web@0.1.0 build
+> next build
+
+unhandledRejection [Error: Unknown system error -70: Unknown system error -70, read] {
+  errno: -70,
+  code: 'Unknown system error -70',
+  syscall: 'read'
+}
