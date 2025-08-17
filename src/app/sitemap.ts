@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://zeyalatelier.com";
 
   let productUrls: MetadataRoute.Sitemap = [];
   try {
